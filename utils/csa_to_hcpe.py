@@ -26,8 +26,8 @@ file_list_train, file_list_test = train_test_split(csa_file_list, test_size=args
 hcpes = np.zeros(1024, HuffmanCodedPosAndEval)
 
 # 訓練データとテストデータのファイルを開く
-f_train = open(args.hcpe_train, 'wb')
-f_test = open(args.hcpe_test, 'wb')
+f_train = open(os.path.join('/content/floodgate', args.hcpe_train), 'wb')
+f_test = open(os.path.join('/content/floodgate', args.hcpe_test), 'wb')
 
 # 将棋盤の初期化
 board = Board()
