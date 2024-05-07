@@ -43,9 +43,6 @@ venv.bak/
 # ログファイル
 *.log
 
-# チェックポイントディレクトリ
-checkpoints/
-
 # データファイル
 *.data
 *.hdf5
