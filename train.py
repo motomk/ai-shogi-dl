@@ -27,10 +27,8 @@ logging.info('batchsize={}'.format(args.batchsize))
 logging.info('lr={}'.format(args.lr))
 
 # デバイスの設定
-if args.gpu >= 0:
-    device = torch.device(f"cuda:{args.gpu}")
-else:
-    device = torch.device("cpu")
+device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+logging.info(f"使用デバイス: {device}")
 
 # モデルの初期化
 model = PolicyValueNetwork()

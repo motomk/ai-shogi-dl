@@ -15,9 +15,11 @@ class HcpeDataLoader:
         self.device = device
         self.shuffle = shuffle
 
-        self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
-        self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=True)
-        self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=True)
+        pin_memory = device.type == 'cuda'
+
+        self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=pin_memory)
+        self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=pin_memory)
+        self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=pin_memory)
 
         self.features = self.torch_features.numpy()
         self.move_label = self.torch_move_label.numpy()
@@ -37,7 +39,9 @@ class HcpeDataLoader:
                 logging.info(path)
                 data.append(np.fromfile(path, dtype=HuffmanCodedPosAndEval))
             else:
-                logging.warn('{} not found, skipping'.format(path))
+                logging.error('{} が見つかりません。スキップします。'.format(path))
+        if not data:
+            raise FileNotFoundError('指定されたファイルが一つも見つかりませんでした。')
         self.data = np.concatenate(data)
 
     def mini_batch(self, hcpevec):

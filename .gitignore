@@ -1,0 +1,56 @@
+# Python の一般的な無視ファイル
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 環境設定ファイル
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# ログファイル
+*.log
+
+# チェックポイントディレクトリ
+checkpoints/
+
+# データファイル
+*.data
+*.hdf5
+*.hcpe
+
+# OS 生成ファイル
+.DS_Store
+Thumbs.db
