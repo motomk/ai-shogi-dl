@@ -8,9 +8,9 @@ from sklearn.model_selection import train_test_split
 
 # コマンドライン引数の設定
 parser = argparse.ArgumentParser()
-parser.add_argument('csa_dir')
-parser.add_argument('hcpe_train')
-parser.add_argument('hcpe_test')
+parser.add_argument('--csa_dir', default='floodgate')
+parser.add_argument('--hcpe_train', default='train_data/train.hcpe')
+parser.add_argument('--hcpe_test', default='train_data/test.hcpe')
 parser.add_argument('--filter_moves', type=int, default=50)
 parser.add_argument('--filter_rating', type=int, default=3500)
 parser.add_argument('--test_ratio', type=float, default=0.1)
