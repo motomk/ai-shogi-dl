@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description='Train policy value network')
 parser.add_argument('train_data', type=str, nargs='+', help='training data file')
 parser.add_argument('test_data', type=str, help='test data file')
 parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU ID')
+parser.add_argument('--mps', '-m', type=int, default=0, help='MPS')
 parser.add_argument('--epoch', '-e', type=int, default=1, help='Number of epoch times')
 parser.add_argument('--batchsize', '-b', type=int, default=1024, help='Number of positions in each mini-batch')
 parser.add_argument('--testbatchsize', type=int, default=1024, help='Number of positions in each test mini-batch')
@@ -27,7 +28,10 @@ logging.info('batchsize={}'.format(args.batchsize))
 logging.info('lr={}'.format(args.lr))
 
 # デバイスの設定
-device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+if args.mps > 0:
+    device = torch.device("mps")
+else:
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 logging.info(f"使用デバイス: {device}")
 
 # モデルの初期化
