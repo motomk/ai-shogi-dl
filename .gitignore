@@ -53,4 +53,5 @@ venv.bak/
 Thumbs.db
 
 checkpoints/*
-
+floodgate/*
+train_data/*
