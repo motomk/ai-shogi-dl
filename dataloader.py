@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import logging
 import torch
+import torch.cuda as cuda
 
 from cshogi import Board, HuffmanCodedPosAndEval
 from features import FEATURES_NUM, make_input_features, make_move_label, make_result
@@ -15,13 +16,12 @@ class HcpeDataLoader:
         self.batch_size = batch_size  # バッチサイズの設定
         self.device = device  # デバイスの設定
         self.shuffle = shuffle  # シャッフルの設定
-
-        pin_memory = device.type == 'cuda' or device.type == 'mps'  # メモリピンの設定
+        self.stream = cuda.Stream()  # GPU転送用のストリームを作成
 
         # テンソルの初期化
-        self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=pin_memory)
-        self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=pin_memory)
-        self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=pin_memory)
+        self.torch_features = torch.empty((batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=True)
+        self.torch_move_label = torch.empty((batch_size), dtype=torch.int64, pin_memory=True)
+        self.torch_result = torch.empty((batch_size, 1), dtype=torch.float32, pin_memory=True)
 
         # NumPy配列への変換
         self.features = self.torch_features.numpy()
@@ -29,7 +29,7 @@ class HcpeDataLoader:
         self.result = self.torch_result.numpy().reshape(-1)
 
         self.i = 0  # インデックスの初期化
-        self.executor = ThreadPoolExecutor(max_workers=1)  # スレッドプールエグゼキュータの設定
+        self.executor = ThreadPoolExecutor(max_workers=4)  # スレッドプールエグゼキュータの設定
 
         self.board = Board()  # 将棋盤の初期化
 
@@ -57,16 +57,17 @@ class HcpeDataLoader:
             self.move_label[i] = make_move_label(hcpe['bestMove16'], self.board.turn)  # ムーブラベルの生成
             self.result[i] = make_result(hcpe['gameResult'], self.board.turn)  # 結果の生成
 
-        if self.device.type == 'cpu':
-            return (self.torch_features.clone(),
-                    self.torch_move_label.clone(),
-                    self.torch_result.clone(),
-                    )
-        else:
-            return (self.torch_features.to(self.device),
-                    self.torch_move_label.to(self.device),
-                    self.torch_result.to(self.device),
-                    )
+        with torch.cuda.stream(self.stream):  # 非同期転送を使用
+            if self.device.type == 'cpu':
+                return (self.torch_features.clone(),
+                        self.torch_move_label.clone(),
+                        self.torch_result.clone(),
+                        )
+            else:
+                return (self.torch_features.to(self.device, non_blocking=True),
+                        self.torch_move_label.to(self.device, non_blocking=True),
+                        self.torch_result.to(self.device, non_blocking=True),
+                        )
 
     # サンプルの取得メソッド
     def sample(self):
