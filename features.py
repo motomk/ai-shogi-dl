@@ -1,6 +1,7 @@
-# 入力特徴量
-# (入力特徴量のチャネル数, 9, 9) 合計28チャネル
-# 
+"""
+入力特徴量
+(入力特徴量のチャネル数, 9, 9) 合計28チャネル
+"""
 import cshogi
 
 # 移動方向を表す定数
@@ -17,6 +18,7 @@ FEATURES_NUM = len(cshogi.PIECE_TYPES) * 2 + sum(cshogi.MAX_PIECES_IN_HAND) * 2
 # 移動を表すラベルの数
 MOVE_PLANES_NUM = len(MOVE_DIRECTION) + len(cshogi.HAND_PIECES)
 MOVE_LABELS_NUM = MOVE_PLANES_NUM * 81
+
 
 # 入力特徴量を作成
 def make_input_features(board, features):
@@ -36,6 +38,7 @@ def make_input_features(board, features):
         for num, max_num in zip(hands, cshogi.MAX_PIECES_IN_HAND):
             features[i:i+num].fill(1)
             i += max_num
+
 
 # 移動を表すラベルを作成
 def make_move_label(move, color):
@@ -66,6 +69,7 @@ def make_move_label(move, color):
 
     return move_direction * 81 + to_sq
 
+
 def determine_move_direction(dir_x, dir_y):
     if dir_y < 0:
         if dir_x == 0:
@@ -90,7 +94,8 @@ def determine_move_direction(dir_x, dir_y):
             return DOWN_RIGHT
         else:
             return DOWN_LEFT
-        
+
+
 # 対局結果から報酬を作成
 def make_result(game_result, color):
     if (color == cshogi.BLACK and game_result == cshogi.BLACK_WIN) or (color == cshogi.WHITE and game_result == cshogi.WHITE_WIN):
@@ -99,5 +104,3 @@ def make_result(game_result, color):
         return 0
     else:
         return 0.5
-
-

@@ -8,6 +8,7 @@ import torch.cuda as cuda
 from cshogi import Board, HuffmanCodedPosAndEval
 from features import FEATURES_NUM, make_input_features, make_move_label, make_result
 
+
 # HcpeDataLoaderクラスの定義
 class HcpeDataLoader:
     # 初期化メソッド

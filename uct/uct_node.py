@@ -1,5 +1,6 @@
 ﻿import numpy as np
 
+
 class UctNode:
     def __init__(self):
         self.move_count = 0           # ノードの訪問回数
@@ -49,6 +50,7 @@ class UctNode:
         # 子ノードのリストを初期化する
         self.child_node = [UctNode()]
         return self.child_node[0]
+
 
 class NodeTree:
     def __init__(self):

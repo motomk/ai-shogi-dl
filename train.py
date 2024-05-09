@@ -70,9 +70,11 @@ test_dataloader = HcpeDataLoader(args.test_data, args.testbatchsize, device)
 logging.info('train position num = {}'.format(len(train_dataloader)))
 logging.info('test position num = {}'.format(len(test_dataloader)))
 
+
 # 方策の正解率を計算する関数
 def accuracy(y, t):
     return (torch.max(y, 1)[1] == t).sum().item() / len(t)
+
 
 # 価値の正解率を計算する関数
 def binary_accuracy(y, t):
@@ -80,9 +82,10 @@ def binary_accuracy(y, t):
     truth = t >= 0.5
     return pred.eq(truth).sum().item() / len(t)
 
+
 # チェックポイントを保存する関数
 def save_checkpoint():
-    path = args.checkpoint.format(**{'epoch':epoch, 'step':t})
+    path = args.checkpoint.format(**{'epoch': epoch, 'step': t})
     logging.info('Saving the checkpoint to {}'.format(path))
     checkpoint = {
         'epoch': epoch,
@@ -133,8 +136,16 @@ for e in range(args.epoch):
                 test_accuracy_policy = accuracy(y1, move_label)
                 test_accuracy_value = binary_accuracy(y2, result)
 
-                logging.info(f'epoch = {epoch}, steps = {t}, train loss = {sum_loss_policy_interval / steps_interval:.07f}, {sum_loss_value_interval / steps_interval:.07f}, {(sum_loss_policy_interval + sum_loss_value_interval) / steps_interval:.07f}, test loss = {test_loss_policy:.07f}, {test_loss_value:.07f}, {test_loss_policy + test_loss_value:.07f}, test accuracy = {test_accuracy_policy:.07f}, {test_accuracy_value:.07f}')
-
+                train_loss_policy = sum_loss_policy_interval / steps_interval
+                train_loss_value = sum_loss_value_interval / steps_interval
+                train_loss_total = (sum_loss_policy_interval + sum_loss_value_interval) / steps_interval
+                test_loss_total = test_loss_policy + test_loss_value
+                logging.info(
+                    f'epoch = {epoch}, steps = {t}, '
+                    f'train loss = {train_loss_policy:.07f}, {train_loss_value:.07f}, {train_loss_total:.07f}, '
+                    f'test loss = {test_loss_policy:.07f}, {test_loss_value:.07f}, {test_loss_total:.07f}, '
+                    f'test accuracy = {test_accuracy_policy:.07f}, {test_accuracy_value:.07f}'
+                )
             # エポックごとのステップ数カウンタと損失合計に加算
             steps_epoch += steps_interval
             sum_loss_policy_epoch += sum_loss_policy_interval
@@ -166,7 +177,21 @@ for e in range(args.epoch):
             sum_test_accuracy_policy += accuracy(y1, move_label)
             sum_test_accuracy_value += binary_accuracy(y2, result)
 
-    logging.info(f'epoch = {epoch}, steps = {t}, train loss avr = {sum_loss_policy_epoch / steps_epoch:.07f}, {sum_loss_value_epoch / steps_epoch:.07f}, {(sum_loss_policy_epoch + sum_loss_value_epoch) / steps_epoch:.07f}, test loss = {sum_test_loss_policy / test_steps:.07f}, {sum_test_loss_value / test_steps:.07f}, {(sum_test_loss_policy + sum_test_loss_value) / test_steps:.07f}, test accuracy = {sum_test_accuracy_policy / test_steps:.07f}, {sum_test_accuracy_value / test_steps:.07f}')
+    train_loss_avg_policy = sum_loss_policy_epoch / steps_epoch
+    train_loss_avg_value = sum_loss_value_epoch / steps_epoch
+    train_loss_avg_total = (sum_loss_policy_epoch + sum_loss_value_epoch) / steps_epoch
+    test_loss_avg_policy = sum_test_loss_policy / test_steps
+    test_loss_avg_value = sum_test_loss_value / test_steps
+    test_loss_avg_total = (sum_test_loss_policy + sum_test_loss_value) / test_steps
+    test_accuracy_avg_policy = sum_test_accuracy_policy / test_steps
+    test_accuracy_avg_value = sum_test_accuracy_value / test_steps
+
+    logging.info(
+        f'epoch = {epoch}, steps = {t}, '
+        f'train loss avr = {train_loss_avg_policy:.07f}, {train_loss_avg_value:.07f}, {train_loss_avg_total:.07f}, '
+        f'test loss = {test_loss_avg_policy:.07f}, {test_loss_avg_value:.07f}, {test_loss_avg_total:.07f}, '
+        f'test accuracy = {test_accuracy_avg_policy:.07f}, {test_accuracy_avg_value:.07f}'
+    )
 
     # チェックポイント保存
     if args.checkpoint:

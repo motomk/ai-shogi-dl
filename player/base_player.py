@@ -1,5 +1,6 @@
 ﻿from concurrent.futures import ThreadPoolExecutor
 
+
 class BasePlayer:
     def __init__(self):
         self.executor = ThreadPoolExecutor(max_workers=1)

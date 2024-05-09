@@ -11,8 +11,9 @@ from .base_player import BasePlayer
 import time
 import math
 from .config import (DEFAULT_GPU_ID, DEFAULT_BATCH_SIZE, DEFAULT_RESIGN_THRESHOLD, DEFAULT_C_PUCT,
-                    DEFAULT_TEMPERATURE, DEFAULT_TIME_MARGIN, DEFAULT_BYOYOMI_MARGIN, DEFAULT_PV_INTERVAL,
-                    DEFAULT_CONST_PLAYOUT, VALUE_WIN, VALUE_LOSE, VALUE_DRAW, QUEUING, DISCARDED, VIRTUAL_LOSS)
+                     DEFAULT_TEMPERATURE, DEFAULT_TIME_MARGIN, DEFAULT_BYOYOMI_MARGIN, DEFAULT_PV_INTERVAL,
+                     DEFAULT_CONST_PLAYOUT, VALUE_WIN, VALUE_LOSE, VALUE_DRAW, QUEUING, DISCARDED, VIRTUAL_LOSS)
+
 
 # 温度パラメータを適用した確率分布を取得
 def softmax_temperature_with_normalize(logits, temperature):
@@ -29,6 +30,7 @@ def softmax_temperature_with_normalize(logits, temperature):
 
     return probabilities
 
+
 # ノード更新
 def update_result(current_node, next_index, result):
     current_node.sum_value += result
@@ -36,11 +38,13 @@ def update_result(current_node, next_index, result):
     current_node.child_sum_value[next_index] += result
     current_node.child_move_count[next_index] += 1 - VIRTUAL_LOSS
 
+
 # 評価待ちキューの要素
 class EvalQueueElement:
     def set(self, node, color):
         self.node = node
         self.color = color
+
 
 class MCTSPlayer(BasePlayer):
     # USIエンジンの名前
@@ -469,8 +473,8 @@ class MCTSPlayer(BasePlayer):
     # UCB値が最大の手を求める
     def select_max_ucb_child(self, node) -> int:
         q = np.divide(node.child_sum_value, node.child_move_count,
-            out=np.zeros(len(node.child_move), np.float32),
-            where=node.child_move_count != 0)
+                      out=np.zeros(len(node.child_move), np.float32),
+                      where=node.child_move_count != 0)
         if node.move_count == 0:
             u = 1.0
         else:
@@ -560,7 +564,8 @@ class MCTSPlayer(BasePlayer):
            self.root_board.move_number > 20 and \
            self.remaining_time > self.time_limit * 2 and \
            (first < second * 1.5 or
-            current_node.child_sum_value[first_index] / child_move_count[first_index] < current_node.child_sum_value[second_index] / child_move_count[second_index]):
+                current_node.child_sum_value[first_index] / child_move_count[first_index] <
+                current_node.child_sum_value[second_index] / child_move_count[second_index]):
             # 探索時間を2倍に延長
             self.time_limit *= 2
             # 探索延長は1回のみ
@@ -616,6 +621,7 @@ class MCTSPlayer(BasePlayer):
             # ノードの値を更新
             current_node.policy = probabilities
             current_node.value = float(value)
+
 
 if __name__ == '__main__':
     player = MCTSPlayer()
