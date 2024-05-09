@@ -1,5 +1,6 @@
 ﻿import numpy as np
 import torch
+from typing import Optional, Tuple
 
 from cshogi import Board, BLACK, NOT_REPETITION, REPETITION_DRAW, REPETITION_WIN, REPETITION_SUPERIOR, move_to_usi
 from features import FEATURES_NUM, make_input_features, make_move_label
@@ -129,19 +130,26 @@ class MCTSPlayer(BasePlayer):
             self.debug = args[3] == 'true'
 
     # モデルのロード
-    def load_model(self):
-        self.model = PolicyValueNetwork()
-        self.model.to(self.device)
-        checkpoint = torch.load(self.modelfile, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model'])
-        # モデルを評価モードにする
-        self.model.eval()
+    def load_model(self) -> None:
+        try:
+            self.model = PolicyValueNetwork()
+            self.model.to(self.device)
+            checkpoint = torch.load(self.modelfile, map_location=self.device)
+            self.model.load_state_dict(checkpoint['model'])
+            # モデルを評価モードにする
+            self.model.eval()
+        except FileNotFoundError:
+            print(f"エラー: モデルファイル {self.modelfile} が見つかりません。")
+            raise
+        except Exception as e:
+            print(f"モデルのロード中に予期せぬエラーが発生しました: {str(e)}")
+            raise
 
     # 入力特徴量の初期化
-    def init_features(self):
+    def init_features(self) -> None:
         self.features = torch.empty((self.batch_size, FEATURES_NUM, 9, 9), dtype=torch.float32, pin_memory=(self.gpu_id >= 0))
 
-    def isready(self):
+    def isready(self) -> None:
         # デバイス
         if self.gpu_id >= 0:
             self.device = torch.device(f"cuda:{self.gpu_id}")
@@ -167,7 +175,7 @@ class MCTSPlayer(BasePlayer):
             self.queue_node(self.root_board, current_node)
         self.eval_node()
 
-    def position(self, sfen, usi_moves):
+    def position(self, sfen, usi_moves) -> None:
         if sfen == 'startpos':
             self.root_board.reset()
         elif sfen[:5] == 'sfen ':
@@ -184,7 +192,7 @@ class MCTSPlayer(BasePlayer):
         if self.debug:
             print(self.root_board)
 
-    def set_limits(self, btime=None, wtime=None, byoyomi=None, binc=None, winc=None, nodes=None, infinite=False, ponder=False):
+    def set_limits(self, btime=None, wtime=None, byoyomi=None, binc=None, winc=None, nodes=None, infinite=False, ponder=False) -> None:
         # 探索回数の閾値を設定
         if infinite or ponder:
             # infiniteもしくはponderの場合は、探索を打ち切らないため、32ビット整数の最大値を設定する
@@ -212,7 +220,7 @@ class MCTSPlayer(BasePlayer):
                 self.extend_time = self.time_limit > self.minimum_time
                 self.halt = None
 
-    def go(self):
+    def go(self) -> Optional[Tuple[str, Optional[str]]]:
         # 探索開始時刻の記録
         self.begin_time = time.time()
 
@@ -265,7 +273,7 @@ class MCTSPlayer(BasePlayer):
 
         return move_to_usi(bestmove), move_to_usi(ponder_move) if ponder_move else None
 
-    def check_game_end(self):
+    def check_game_end(self) -> Optional[Tuple[str, Optional[str]]]:
         # 投了チェック
         if self.root_board.is_game_over():
             return 'resign', None
@@ -290,11 +298,11 @@ class MCTSPlayer(BasePlayer):
 
         return None
 
-    def stop(self):
+    def stop(self) -> None:
         # すぐに中断する
         self.halt = 0
 
-    def ponderhit(self, last_limits):
+    def ponderhit(self, last_limits) -> None:
         # 探索開始時刻の記録
         self.begin_time = time.time()
         self.last_pv_print_time = 0
@@ -305,10 +313,10 @@ class MCTSPlayer(BasePlayer):
         # 探索回数の閾値を設定
         self.set_limits(**last_limits)
 
-    def quit(self):
+    def quit(self) -> None:
         self.stop()
 
-    def search(self):
+    def search(self) -> None:
         self.last_pv_print_time = 0
 
         # 探索経路のバッチ
@@ -379,7 +387,7 @@ class MCTSPlayer(BasePlayer):
                     self.get_bestmove_and_print_pv()
 
     # UCT探索
-    def uct_search(self, board, current_node, trajectories):
+    def uct_search(self, board, current_node, trajectories) -> float:
         # 子ノードのリストが初期化されていない場合、初期化する
         if not current_node.child_node:
             current_node.child_node = [None for _ in range(len(current_node.child_move))]
@@ -459,7 +467,7 @@ class MCTSPlayer(BasePlayer):
         return 1.0 - result
 
     # UCB値が最大の手を求める
-    def select_max_ucb_child(self, node):
+    def select_max_ucb_child(self, node) -> int:
         q = np.divide(node.child_sum_value, node.child_move_count,
             out=np.zeros(len(node.child_move), np.float32),
             where=node.child_move_count != 0)
@@ -472,7 +480,7 @@ class MCTSPlayer(BasePlayer):
         return np.argmax(ucb)
 
     # 最善手取得とinfoの表示
-    def get_bestmove_and_print_pv(self):
+    def get_bestmove_and_print_pv(self) -> Tuple[int, float, Optional[int]]:
         # 探索にかかった時間を求める
         finish_time = time.time() - self.begin_time
 
@@ -515,7 +523,7 @@ class MCTSPlayer(BasePlayer):
         return bestmove, bestvalue, ponder_move
 
     # 探索を打ち切るか確認
-    def check_interruption(self):
+    def check_interruption(self) -> bool:
         # プレイアウト数数が閾値を超えている
         if self.halt is not None:
             return self.playout_count >= self.halt
@@ -563,11 +571,11 @@ class MCTSPlayer(BasePlayer):
         return True
 
     # 入力特徴量の作成
-    def make_input_features(self, board):
+    def make_input_features(self, board) -> None:
         make_input_features(board, self.features.numpy()[self.current_batch_index])
 
     # ノードをキューに追加
-    def queue_node(self, board, node):
+    def queue_node(self, board, node) -> None:
         # 入力特徴量を作成
         self.make_input_features(board)
 
@@ -576,18 +584,18 @@ class MCTSPlayer(BasePlayer):
         self.current_batch_index += 1
 
     # 推論
-    def infer(self):
+    def infer(self) -> Tuple[np.ndarray, np.ndarray]:
         with torch.no_grad():
             x = self.features[0:self.current_batch_index].to(self.device)
             policy_logits, value_logits = self.model(x)
             return policy_logits.cpu().numpy(), torch.sigmoid(value_logits).cpu().numpy()
 
     # 着手を表すラベル作成
-    def make_move_label(self, move, color):
+    def make_move_label(self, move, color) -> int:
         return make_move_label(move, color)
 
     # 局面の評価
-    def eval_node(self):
+    def eval_node(self) -> None:
         # 推論
         policy_logits, values = self.infer()
 
