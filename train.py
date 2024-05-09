@@ -2,6 +2,7 @@
 import logging
 import torch
 import torch.optim as optim
+from torch.cuda.amp import autocast, GradScaler
 
 from network.policy_value_resnet import PolicyValueNetwork
 from dataloader import HcpeDataLoader
@@ -11,7 +12,6 @@ parser = argparse.ArgumentParser(description='Train policy value network')
 parser.add_argument('--train_data', type=str, default='train_data/train.hcpe', help='training data file')
 parser.add_argument('--test_data', type=str, default='train_data/test.hcpe', help='test data file')
 parser.add_argument('--gpu', '-g', type=int, default=0, help='GPU ID')
-parser.add_argument('--mps', '-m', type=int, default=1, help='MPS')
 parser.add_argument('--epoch', '-e', type=int, default=1, help='Number of epoch times')
 parser.add_argument('--batchsize', '-b', type=int, default=1024, help='Number of positions in each mini-batch')
 parser.add_argument('--testbatchsize', type=int, default=1024, help='Number of positions in each test mini-batch')
@@ -28,10 +28,7 @@ logging.info('batchsize={}'.format(args.batchsize))
 logging.info('lr={}'.format(args.lr))
 
 # デバイスの設定
-if args.mps > 0:
-    device = torch.device("mps")
-else:
-    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 logging.info(f"使用デバイス: {device}")
 
 # モデルの初期化
@@ -44,6 +41,9 @@ optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay
 # 損失関数の設定
 cross_entropy_loss = torch.nn.CrossEntropyLoss()
 bce_with_logits_loss = torch.nn.BCEWithLogitsLoss()
+
+# AMPのスケーラーを初期化
+scaler = GradScaler()
 
 # チェックポイントの読み込み
 if args.resume:
@@ -106,15 +106,15 @@ for e in range(args.epoch):
         model.train()
 
         # 順伝播と損失計算
-        y1, y2 = model(x)
-        loss_policy = cross_entropy_loss(y1, move_label)
-        loss_value = bce_with_logits_loss(y2, result)
-        loss = loss_policy + loss_value
-
-        # 誤差逆伝播とパラメータ更新
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        with autocast():
+            y1, y2 = model(x)
+            loss_policy = cross_entropy_loss(y1, move_label)
+            loss_value = bce_with_logits_loss(y2, result)
+            loss = loss_policy + loss_value
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         # ステップ数と損失の更新
         t += 1
