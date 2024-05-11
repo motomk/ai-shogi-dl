@@ -15,6 +15,7 @@ class HcpeDataLoader:
     def __init__(self, files, batch_size, device, shuffle=False):
         self.load(files)  # ファイルの読み込み
         self.batch_size = batch_size  # バッチサイズの設定
+
         self.device = device  # デバイスの設定
         self.shuffle = shuffle  # シャッフルの設定
         self.stream = cuda.Stream()  # GPU転送用のストリームを作成

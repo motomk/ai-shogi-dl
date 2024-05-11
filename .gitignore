@@ -52,7 +52,6 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-checkpoints/
 floodgate/
 train_data/
 *.7z
