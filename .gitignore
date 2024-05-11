@@ -1,8 +1,10 @@
-# Python の一般的な無視ファイル
+# バイトコンパイルされたファイル
 *.pyc
 __pycache__/
 *.pyo
 *.pyd
+
+# パッケージングファイル
 .Python
 build/
 develop-eggs/
@@ -52,6 +54,7 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
+# その他
 floodgate/
 train_data/
 *.7z
